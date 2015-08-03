@@ -82,7 +82,6 @@ class ARDrone(object):
     """
 
     def __init__(self, is_ar_drone_2=False, hd=False):
-
         self.seq_nr = 1
         self.timer_t = 0.2
         self.com_watchdog_timer = threading.Timer(self.timer_t, self.commwdg)
@@ -119,11 +118,21 @@ class ARDrone(object):
         self.last_command_is_hovering = True
         self.com_pipe, com_pipe_other = multiprocessing.Pipe()
 
+        if sys.platform == 'win32':
+            self.com_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.com_socket.bind(('127.0.0.1', 17482))
+
         self.navdata = dict()
         self.navdata[0] = dict(zip(['ctrl_state', 'battery', 'theta', 'phi', 'psi', 'altitude', 'vx', 'vy', 'vz', 'num_frames'], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
 
         self.network_process = arnetwork.ARDroneNetworkProcess(com_pipe_other, is_ar_drone_2, self)
         self.network_process.start()
+
+        if sys.platform == 'win32':
+            # print "waiting for connection"
+            self.com_socket.listen(3)
+            self.conn_network, addr = self.com_socket.accept()
+            # print "got connection"
 
         self.image = np.zeros(self.image_shape, np.uint8)
         self.time = 0
@@ -134,7 +143,6 @@ class ARDrone(object):
 
         self.at(at_config_ids , self.config_ids_string)
         self.at(at_config, "general:navdata_demo", "TRUE")
-
 
     def takeoff(self):
         """Make the drone takeoff."""
@@ -288,9 +296,16 @@ class ARDrone(object):
         self.lock.acquire()
         self.com_watchdog_timer.cancel()
         self.com_pipe.send('die!')
+        # print "sending die!"
+        if sys.platform == 'win32':
+            self.conn_network.sendall('die!')
+
         self.network_process.terminate()
         self.network_process.join()
         self.lock.release()
+
+        if sys.platform == 'win32':
+            self.com_socket.close()
 
     def get_image(self):
         _im = np.copy(self.image)

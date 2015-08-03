@@ -27,6 +27,7 @@ import select
 import socket
 import multiprocessing
 import libardrone
+import time
 
 class ARDroneNetworkProcess(threading.Thread):
     """ARDrone Network Process.
@@ -69,8 +70,14 @@ class ARDroneNetworkProcess(threading.Thread):
             control_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             control_socket.connect(('192.168.1.1', libardrone.ARDRONE_CONTROL_PORT))
             control_socket.setblocking(0)
+
+            time.sleep(1.0)
+
+            com_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            com_socket.connect(('127.0.0.1', 17482))
+            com_socket.setblocking(0)
             logging.warn('Connection established')
-            return video_socket, nav_socket, control_socket
+            return video_socket, nav_socket, control_socket, com_socket
 
         def _disconnect(video_socket, nav_socket, control_socket):
             logging.warn('Disconnection to ardrone streams')
@@ -78,7 +85,7 @@ class ARDroneNetworkProcess(threading.Thread):
             nav_socket.close()
             control_socket.close()
 
-        video_socket, nav_socket, control_socket = _connect()
+        video_socket, nav_socket, control_socket, com_socket = _connect()
 
         self.stopping = False
         connection_lost = 1
@@ -88,7 +95,7 @@ class ARDroneNetworkProcess(threading.Thread):
                 _disconnect(video_socket, nav_socket, control_socket)
                 video_socket, nav_socket, control_socket = _connect()
                 reconnection_needed = False
-            inputready, outputready, exceptready = select.select([nav_socket, video_socket, self.com_pipe, control_socket], [], [], 1.)
+            inputready, outputready, exceptready = select.select([nav_socket, video_socket, com_socket, control_socket], [], [], 1.)
             if len(inputready) == 0:
                 connection_lost += 1
                 reconnection_needed = True
@@ -120,6 +127,10 @@ class ARDroneNetworkProcess(threading.Thread):
                         self._drone.set_navdata(navdata)
                 elif i == self.com_pipe:
                     _ = self.com_pipe.recv()
+                    self.stopping = True
+                    break
+                elif i == com_socket:
+                    # print "got die!"
                     self.stopping = True
                     break
                 elif i == control_socket:
