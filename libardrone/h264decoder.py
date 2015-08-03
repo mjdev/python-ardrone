@@ -81,11 +81,18 @@ class H264Decoder(object):
             if (H264Decoder.which('ffmpeg') is None):
                 raise Exception("You need to install ffmpeg to be able to run ardrone")
 
-            p = Popen(["nice", "-n", "15", "ffmpeg", "-i", "-", "-f", "sdl",
-                       "-probesize", "2048", "-flags", "low_delay", "-f",
-                       "rawvideo", "-pix_fmt", 'rgb24', "-"],
-                      stdin=PIPE, stdout=PIPE, stderr=open('/dev/null', 'w'),
-                      bufsize=0, preexec_fn=set_death_signal_int)
+            if sys.platform == 'win32':
+                p = Popen(["ffmpeg.exe", "-i", "-", "-f", "sdl",
+                           "-probesize", "2048", "-flags", "low_delay", "-f",
+                           "rawvideo", "-pix_fmt", 'rgb24', "-"],
+                          stdin=PIPE, stdout=PIPE,
+                          bufsize=0)
+            else:
+                p = Popen(["nice", "-n", "15", "ffmpeg", "-i", "-", "-f", "sdl",
+                           "-probesize", "2048", "-flags", "low_delay", "-f",
+                           "rawvideo", "-pix_fmt", 'rgb24', "-"],
+                          stdin=PIPE, stdout=PIPE, stderr=open('/dev/null', 'w'),
+                          bufsize=0, preexec_fn=set_death_signal_int)
             t = Thread(target=enqueue_output, args=(p.stdout, outfileobject, frame_size))
             t.daemon = True # thread dies with the program
             t.start()
@@ -119,5 +126,10 @@ class H264Decoder(object):
                 exe_file = os.path.join(path, program)
                 if is_exe(exe_file):
                     return exe_file
+                if sys.platform == 'win32':
+                    exe_file = exe_file + ".exe"
+                    print "trying", exe_file, os.path.isfile(exe_file)
+                    if is_exe(exe_file):
+                        return exe_file
 
         return None

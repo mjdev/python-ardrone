@@ -1,3 +1,6 @@
 *.pyc
 *~
 .cache
+build/
+python_ardrone.egg-info/
+dist/python_ardrone-dev-py2.7.egg
