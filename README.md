@@ -1,3 +1,17 @@
+ARDrone for Windows
+----------------
+
+This is a clone of the original libardrone repository adapted to work with windows.
+
+Setup
+-----
+
+Requirements:
+1. Download ffmpeg for windows (static binaries)
+2. Add the build folder where ffmpeg.exe resides (usually .\bin) to your PATH
+3. You should be ready to go. To install the script use the original setup.py
+
+
 Getting Started:
 ----------------
 
