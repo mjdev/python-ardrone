@@ -93,7 +93,7 @@ class ARDroneNetworkProcess(threading.Thread):
         while not self.stopping:
             if reconnection_needed:
                 _disconnect(video_socket, nav_socket, control_socket)
-                video_socket, nav_socket, control_socket = _connect()
+                video_socket, nav_socket, control_socket, com_socket = _connect()
                 reconnection_needed = False
             inputready, outputready, exceptready = select.select([nav_socket, video_socket, com_socket, control_socket], [], [], 1.)
             if len(inputready) == 0:
