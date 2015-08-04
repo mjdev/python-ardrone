@@ -7,8 +7,11 @@ Setup
 -----
 
 Requirements:
+
 1. Download ffmpeg for windows (static binaries)
+
 2. Add the build folder where ffmpeg.exe resides (usually .\bin) to your PATH
+
 3. You should be ready to go. To install the script use the original setup.py
 
 
